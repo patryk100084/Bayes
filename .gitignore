@@ -1,6 +1,5 @@
 env/
 
-utils/__pycache__/
-utils/.ipynb_checkpoints/
+__pycache__
 .*/
 
