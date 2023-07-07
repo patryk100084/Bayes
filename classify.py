@@ -33,7 +33,8 @@ def classify_image(thread_number, image_names, skin_bins, nonskin_bins, bin_size
     for i in range(len(image_names)):
         image_name = image_names[i] + ".jpg"
         test_image = image_loader.load_image(img_dir, image_name, 3)
-        prob_map = numpy.zeros((test_image.shape[0], test_image.shape[1], 1), numpy.float32)
+        skin_prob_map = numpy.zeros((test_image.shape[0], test_image.shape[1], 1), numpy.float32)
+        nonskin_prob_map = numpy.zeros((test_image.shape[0], test_image.shape[1], 1), numpy.float32)
         for j in range(test_image.shape[0]):
             for k in range(test_image.shape[1]):
                 b = math.floor(test_image[j][k][0]/(256/bin_size_b))
@@ -42,12 +43,17 @@ def classify_image(thread_number, image_names, skin_bins, nonskin_bins, bin_size
                 PvCs = (skin_bins[b, g, r]/pixel_counts[0])
                 PvCns = (nonskin_bins[b, g, r]/pixel_counts[1])
                 if (PvCs*PCs + PvCns*PCns) == 0.0: # division by zero
-                    prob_map[j][k] = 0.0
+                    skin_prob_map[j][k] = 0.0
+                    nonskin_prob_map[j][k] = 0.0
                 else: 
-                    prob_map[j][k] = PvCs*PCs / (PvCs*PCs + PvCns*PCns)
-        map_name = image_names[i] + "_map.jpg"
-        output_path = os.path.join(output_dir, map_name)
-        cv2.imwrite(output_path, numpy.multiply(prob_map,255))
+                    skin_prob_map[j][k] = PvCs*PCs / (PvCs*PCs + PvCns*PCns)
+                    nonskin_prob_map[j][k] = PvCns*PCns / (PvCs*PCs + PvCns*PCns)
+        skin_map_name = image_names[i] + "_s_map.jpg"
+        nonskin_map_name = image_names[i] + "_ns_map.jpg"
+        skin_output_path = os.path.join(output_dir, "skin_maps", skin_map_name)
+        nonskin_output_path = os.path.join(output_dir, "nonskin_maps", nonskin_map_name)
+        cv2.imwrite(skin_output_path, numpy.multiply(skin_prob_map,255))
+        cv2.imwrite(nonskin_output_path, numpy.multiply(nonskin_prob_map,255))
         counter += 1
         if counter % 25 == 0:
             print("THREAD " + str(thread_number) + " : classified " + str(counter) + " / " + str(len(image_names)) + " iamges successfully")
@@ -57,6 +63,11 @@ def classify_image(thread_number, image_names, skin_bins, nonskin_bins, bin_size
 if __name__ == '__main__':
 
     start_time = time.time()
+    try:
+        os.makedirs(os.path.join(output_dir, "skin_maps"))
+        os.makedirs(os.path.join(output_dir, "nonskin_maps"))
+    except OSError as error:
+        pass
 
     for i in range(len(test_names)):
         test_names[i] = test_names[i].strip()

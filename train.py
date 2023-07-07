@@ -47,7 +47,7 @@ def train_classifier(thread_number, images_names, bin_size_b, bin_size_g, bin_si
         mask_name = images_names[i] + "_s.bmp"
         train_image = image_loader.load_image(img_dir, image_name, 3)
         train_mask = image_loader.load_image(mask_dir, mask_name, 1)
-        if train_image.shape[0] != train_mask.shape[0] or train_image.shape[1] != train_mask.shape[1]:
+        if train_image.shape != train_mask.shape:
             print("WARNING:" + image_name + " and " + mask_name + " dimensions are diffrent")
             continue
         for j in range(train_image.shape[0]):
