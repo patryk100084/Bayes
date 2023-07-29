@@ -25,10 +25,13 @@ chunk_size = 125
 # number of images classified during testing:
 test_images_processed = 0
     
-def classify_image(thread_number, image_names, skin_bins, nonskin_bins, bin_size_b, bin_size_g, bin_szie_r, pixel_counts):
+def classify_image(thread_number, image_names, skin_bins, nonskin_bins, bin_size_b, bin_size_g, bin_size_r, pixel_counts):
     PCs = pixel_counts[0]/(pixel_counts[0]+pixel_counts[1])
     PCns = pixel_counts[1]/(pixel_counts[0]+pixel_counts[1])
     counter = 0
+    b_ratio = bin_size_b/256
+    g_ratio = bin_size_g/256
+    r_ratio = bin_size_r/256
     print("THREAD " + str(thread_number) + " INFO: thread started working")
     for i in range(len(image_names)):
         image_name = image_names[i] + ".jpg"
@@ -37,9 +40,9 @@ def classify_image(thread_number, image_names, skin_bins, nonskin_bins, bin_size
         nonskin_prob_map = numpy.zeros((test_image.shape[0], test_image.shape[1], 1), numpy.float32)
         for j in range(test_image.shape[0]):
             for k in range(test_image.shape[1]):
-                b = math.floor(test_image[j][k][0]/(256/bin_size_b))
-                g = math.floor(test_image[j][k][1]/(256/bin_size_g))
-                r = math.floor(test_image[j][k][2]/(256/bin_szie_r))
+                b = math.floor(test_image[j][k][0]*b_ratio)
+                g = math.floor(test_image[j][k][1]*g_ratio)
+                r = math.floor(test_image[j][k][2]*r_ratio)
                 PvCs = (skin_bins[b, g, r]/pixel_counts[0])
                 PvCns = (nonskin_bins[b, g, r]/pixel_counts[1])
                 if (PvCs*PCs + PvCns*PCns) == 0.0: # division by zero
@@ -64,8 +67,8 @@ if __name__ == '__main__':
 
     start_time = time.time()
     try:
-        os.makedirs(os.path.join(output_dir, "skin_maps"))
-        os.makedirs(os.path.join(output_dir, "nonskin_maps"))
+        os.makedirs(os.path.join(output_dir, "skin_maps"), exist_ok = True)
+        os.makedirs(os.path.join(output_dir, "nonskin_maps"), exist_ok = True)
     except OSError as error:
         pass
 

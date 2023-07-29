@@ -1,6 +1,6 @@
 import os
 import cv2
-import numpy
+import numpy as np
 import time
 import math
 import multiprocessing
@@ -12,7 +12,7 @@ skin_maps_dir = os.path.join('output', 'skin_maps')
 nonskin_maps_dir = os.path.join('output', 'nonskin_maps')
 ground_truth_dir = 'SkinBin'
 
-# read lines from text files
+# get probability maps from directories
 skin_maps_names = os.listdir(skin_maps_dir)
 nonskin_maps_names = os.listdir(nonskin_maps_dir)
 
@@ -21,7 +21,7 @@ chunk_size = 125
 masks_and_maps_loaded = 0
 maps_validated = 0
 
-# probability above which pixel is considered skin
+# threshold for both clasifications
 thresholds = [0.45]
 
 def validate_classification(thread_number, threshold, skin_map_names, nonskin_map_names):
@@ -33,7 +33,6 @@ def validate_classification(thread_number, threshold, skin_map_names, nonskin_ma
     nsTN = 0
     nsFP = 0
     nsFN = 0
-    counter = 0
     print("THREAD " + str(thread_number) + " INFO: thread started working")
     if len(skin_map_names) == len(nonskin_map_names):
         for i in range(len(skin_map_names)):
@@ -42,47 +41,53 @@ def validate_classification(thread_number, threshold, skin_map_names, nonskin_ma
             ground_truth_name = skin_map_names[i].replace("_s_map.jpg", "_s.bmp")
             ground_truth = image_loader.load_image(ground_truth_dir, ground_truth_name, 1)
             if skin_prob_map.shape == ground_truth.shape and nonskin_prob_map.shape == ground_truth.shape:
-                for j in range(skin_prob_map.shape[0]):
-                    for k in range(skin_prob_map.shape[1]):
-                        if ground_truth[j][k] == 0.0: # skin on ground truth
-                            if skin_prob_map[j][k] > threshold: # skin detected by skin classifier 
-                                sTP += 1
-                            else: # non-skin detected by skin classifier
-                                sFN += 1 
-                            if nonskin_prob_map[j][k] > threshold: # non-skin detected by non-skin classifer
-                                nsFP += 1
-                            else: # skin detected by non-skin classifer
-                                nsTN += 1
-                        else: # non-skin on ground truth
-                            if skin_prob_map[j][k] > threshold: # skin detected by skin classifier 
-                                sFP += 1
-                            else: # non-skin detected by skin classifier
-                                sTN += 1
-                            if nonskin_prob_map[j][k] > threshold: # non-skin detected by non-skin classifer
-                                nsTP += 1
-                            else: # skin detected by non-skin classifer
-                                nsFN += 1
-                        
-                        #if skin_prob_map[j][k] > threshold and ground_truth[j][k] == 0.0: # if pixel is classified as skin and it is considered skin in mask
-                        #    sTP += 1
-                        #elif skin_prob_map[j][k] > threshold and ground_truth[j][k] == 1.0: # if pixel is classified as skin and it is considered non-skin in mask
-                        #    sFP += 1
-                        #elif skin_prob_map[j][k] < threshold and ground_truth[j][k] == 0.0: # if pixel is classified as non-skin and it is considered skin in mask
-                        #    sFN += 1
-                        #elif skin_prob_map[j][k] < threshold and ground_truth[j][k] == 1.0: # if pixel is classified as non-skin and it is considered non-skin in mask
-                        #    sTN += 1
+                
+                # skin classificator validation
+                skin_xor = np.logical_xor((skin_prob_map > threshold), ground_truth)
+                skin_xnor = ~skin_xor
+                FP = np.sum(np.logical_and((skin_prob_map > threshold), ground_truth))
+                TN = np.sum(np.logical_and((skin_prob_map <= threshold), ground_truth))
+                TP = np.sum(skin_xor) - TN
+                FN = np.sum(skin_xnor) - FP
 
-                        #if nonskin_prob_map[j][k] > threshold and ground_truth[j][k] == 1.0: # if pixel is classified as skin and it is considered skin in mask
-                        #    nsTP += 1
-                        #elif nonskin_prob_map[j][k] > threshold and ground_truth[j][k] == 0.0: # if pixel is classified as skin and it is considered non-skin in mask
-                        #    nsFP += 1
-                        #elif nonskin_prob_map[j][k] < threshold and ground_truth[j][k] == 1.0: # if pixel is classified as non-skin and it is considered skin in mask
-                        #    nsFN += 1
-                        #elif nonskin_prob_map[j][k] < threshold and ground_truth[j][k] == 0.0: # if pixel is classified as non-skin and it is considered non-skin in mask
-                        #    nsTN += 1
-                counter += 1
-                if counter % 25 == 0:
-                    print("THREAD " + str(thread_number) + " : validated " + str(counter) + " / " + str(len(skin_map_names)) + " images")
+                sTP += TP
+                sTN += TN
+                sFP += FP
+                sFN += FN
+
+                # non-skin classificator validation
+                nonskin_xor = np.logical_xor((nonskin_prob_map > threshold), ground_truth)
+                nonskin_xnor = ~nonskin_xor
+                TP = np.sum(np.logical_and((nonskin_prob_map > threshold), ground_truth))
+                FN = np.sum(np.logical_and((nonskin_prob_map <= threshold), ground_truth))
+                TN = np.sum(nonskin_xnor) - TP
+                FP = np.sum(nonskin_xor) - FN
+
+                nsTP += TP
+                nsTN += TN
+                nsFP += FP
+                nsFN += FN
+
+                # for j in range(skin_prob_map.shape[0]):
+                #     for k in range(skin_prob_map.shape[1]):
+                #         if ground_truth[j][k] == 0.0: # skin on ground truth
+                #             if skin_prob_map[j][k] > threshold: # skin detected by skin classifier 
+                #                 sTP += 1
+                #             else: # non-skin detected by skin classifier
+                #                 sFN += 1 
+                #             if nonskin_prob_map[j][k] > threshold: # non-skin detected by non-skin classifer
+                #                 nsFP += 1
+                #             else: # skin detected by non-skin classifer
+                #                 nsTN += 1
+                #         else: # non-skin on ground truth
+                #             if skin_prob_map[j][k] > threshold: # skin detected by skin classifier 
+                #                 sFP += 1
+                #             else: # non-skin detected by skin classifier
+                #                 sTN += 1
+                #             if nonskin_prob_map[j][k] > threshold: # non-skin detected by non-skin classifer
+                #                 nsTP += 1
+                #             else: # skin detected by non-skin classifer
+                #                 nsFN += 1
         
     print("THREAD " + str(thread_number) + " INFO: thread finished working")
     return [sTP,sTN,sFP,sFN,nsTP,nsTN,nsFP,nsFN]
@@ -90,7 +95,7 @@ def validate_classification(thread_number, threshold, skin_map_names, nonskin_ma
 if __name__ == '__main__':
 
     try:
-        os.makedirs(metrics_dir)
+        os.makedirs(metrics_dir, exist_ok = True)
     except OSError as error:
         pass
 

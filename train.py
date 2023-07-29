@@ -42,30 +42,34 @@ def train_classifier(thread_number, images_names, bin_size_b, bin_size_g, bin_si
     skin_pixels = 0
     nonskin_pixels = 0
     counter = 0
+    b_ratio = bin_size_b/256
+    g_ratio = bin_size_g/256
+    r_ratio = bin_size_r/256
     for i in range(len(images_names)):
         image_name = images_names[i] + ".jpg"
         mask_name = images_names[i] + "_s.bmp"
         train_image = image_loader.load_image(img_dir, image_name, 3)
         train_mask = image_loader.load_image(mask_dir, mask_name, 1)
-        if train_image.shape != train_mask.shape:
+        if train_image.shape[0] == train_mask.shape[0] and train_image.shape[1] == train_mask.shape[1]:
+            for j in range(train_image.shape[0]):
+                for k in range(train_image.shape[1]):
+                    if train_mask[j][k] == 0.0:
+                        skin_pixels += 1
+                        b = math.floor(train_image[j][k][0]*b_ratio)
+                        g = math.floor(train_image[j][k][1]*g_ratio)
+                        r = math.floor(train_image[j][k][2]*r_ratio)
+                        skin_bins[b,g,r] += 1
+                    else:
+                        nonskin_pixels += 1
+                        b = math.floor(train_image[j][k][0]*b_ratio)
+                        g = math.floor(train_image[j][k][1]*g_ratio)
+                        r = math.floor(train_image[j][k][2]*r_ratio)
+                        nonskin_bins[b,g,r] += 1
+        else:
             print("WARNING:" + image_name + " and " + mask_name + " dimensions are diffrent")
             continue
-        for j in range(train_image.shape[0]):
-            for k in range(train_image.shape[1]):
-                if train_mask[j][k] == 0.0:
-                    skin_pixels += 1
-                    b = math.floor(train_image[j][k][0]/(256/bin_size_b))
-                    g = math.floor(train_image[j][k][1]/(256/bin_size_g))
-                    r = math.floor(train_image[j][k][2]/(256/bin_size_r))
-                    skin_bins[b,g,r] += 1
-                else:
-                    nonskin_pixels += 1
-                    b = math.floor(train_image[j][k][0]/(256/bin_size_b))
-                    g = math.floor(train_image[j][k][1]/(256/bin_size_g))
-                    r = math.floor(train_image[j][k][2]/(256/bin_size_r))
-                    nonskin_bins[b,g,r] += 1
         counter += 1
-        if counter % 20 == 0:
+        if counter % 25 == 0:
             print("THREAD " + str(thread_number) + " : processed " + str(counter) + " / " + str(len(images_names)) + " images")
     print("THREAD " + str(thread_number) + " INFO: thread finished working")
     # show training progress in console
