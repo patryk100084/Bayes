@@ -1,6 +1,6 @@
 import os
 import cv2
-import numpy
+import numpy as np
 import time
 import math
 import multiprocessing
@@ -36,8 +36,8 @@ def classify_image(thread_number, image_names, skin_bins, nonskin_bins, bin_size
     for i in range(len(image_names)):
         image_name = image_names[i] + ".jpg"
         test_image = image_loader.load_image(img_dir, image_name, 3)
-        skin_prob_map = numpy.zeros((test_image.shape[0], test_image.shape[1], 1), numpy.float32)
-        nonskin_prob_map = numpy.zeros((test_image.shape[0], test_image.shape[1], 1), numpy.float32)
+        skin_prob_map = np.zeros((test_image.shape[0], test_image.shape[1], 1), np.float32)
+        nonskin_prob_map = np.zeros((test_image.shape[0], test_image.shape[1], 1), np.float32)
         for j in range(test_image.shape[0]):
             for k in range(test_image.shape[1]):
                 b = math.floor(test_image[j][k][0]*b_ratio)
@@ -55,8 +55,8 @@ def classify_image(thread_number, image_names, skin_bins, nonskin_bins, bin_size
         nonskin_map_name = image_names[i] + "_ns_map.jpg"
         skin_output_path = os.path.join(output_dir, "skin_maps", skin_map_name)
         nonskin_output_path = os.path.join(output_dir, "nonskin_maps", nonskin_map_name)
-        cv2.imwrite(skin_output_path, numpy.multiply(skin_prob_map,255))
-        cv2.imwrite(nonskin_output_path, numpy.multiply(nonskin_prob_map,255))
+        cv2.imwrite(skin_output_path, np.multiply(skin_prob_map,255))
+        cv2.imwrite(nonskin_output_path, np.multiply(nonskin_prob_map,255))
         counter += 1
         if counter % 25 == 0:
             print("THREAD " + str(thread_number) + " : classified " + str(counter) + " / " + str(len(image_names)) + " iamges successfully")
@@ -80,8 +80,8 @@ if __name__ == '__main__':
         exit()
     else:
         # load bins from file
-        nonskin_bins = numpy.load(nonskin_bins_path)
-        skin_bins = numpy.load(skin_bins_path)
+        nonskin_bins = np.load(nonskin_bins_path)
+        skin_bins = np.load(skin_bins_path)
         bin_size = None
 
         if skin_bins.shape == nonskin_bins.shape:
@@ -91,7 +91,7 @@ if __name__ == '__main__':
             exit()
 
         # load and assign probabilities from file
-        pixel_counts = numpy.load(pixel_counts_path)
+        pixel_counts = np.load(pixel_counts_path)
     
         test_names_chuncks = [test_names[i:i+chunk_size] for i in range(0,len(test_names),chunk_size)]
 

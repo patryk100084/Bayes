@@ -1,6 +1,6 @@
 import os
 import cv2
-import numpy
+import numpy as np
 import time
 import math
 import multiprocessing
@@ -32,13 +32,13 @@ train_images_processed = 0
 bin_size = [64,64,64]
 
 # bins (BGR)
-nonskin_bins = numpy.zeros((bin_size[0],bin_size[1],bin_size[2]))
-skin_bins = numpy.zeros((bin_size[0],bin_size[1],bin_size[2]))
+nonskin_bins = np.zeros((bin_size[0],bin_size[1],bin_size[2]))
+skin_bins = np.zeros((bin_size[0],bin_size[1],bin_size[2]))
 
 def train_classifier(thread_number, images_names, bin_size_b, bin_size_g, bin_size_r):
     print("THREAD " + str(thread_number) + " INFO: thread started working")
-    skin_bins = numpy.zeros((bin_size[0],bin_size[1],bin_size[2]))
-    nonskin_bins = numpy.zeros((bin_size[0],bin_size[1],bin_size[2]))
+    skin_bins = np.zeros((bin_size[0],bin_size[1],bin_size[2]))
+    nonskin_bins = np.zeros((bin_size[0],bin_size[1],bin_size[2]))
     skin_pixels = 0
     nonskin_pixels = 0
     counter = 0
@@ -103,9 +103,9 @@ if __name__ == '__main__':
     pixel_counts.append(skin_pixels)
     pixel_counts.append(nonskin_pixels)
 
-    numpy.save("skin_bins", skin_bins)
-    numpy.save("nonskin_bins", nonskin_bins)
-    numpy.save("pixel_counts", pixel_counts)
+    np.save("skin_bins", skin_bins)
+    np.save("nonskin_bins", nonskin_bins)
+    np.save("pixel_counts", pixel_counts)
 
     end_time = time.time()
 
