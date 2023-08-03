@@ -37,7 +37,6 @@ def classify_image(thread_number, image_names, skin_bins, nonskin_bins, bin_size
         image_name = image_names[i] + ".jpg"
         test_image = image_loader.load_image(img_dir, image_name, 3)
         skin_prob_map = np.zeros((test_image.shape[0], test_image.shape[1], 1), np.float32)
-        nonskin_prob_map = np.zeros((test_image.shape[0], test_image.shape[1], 1), np.float32)
         for j in range(test_image.shape[0]):
             for k in range(test_image.shape[1]):
                 b = math.floor(test_image[j][k][0]*b_ratio)
@@ -47,16 +46,11 @@ def classify_image(thread_number, image_names, skin_bins, nonskin_bins, bin_size
                 PvCns = (nonskin_bins[b, g, r]/pixel_counts[1])
                 if (PvCs*PCs + PvCns*PCns) == 0.0: # division by zero
                     skin_prob_map[j][k] = 0.0
-                    nonskin_prob_map[j][k] = 0.0
                 else: 
                     skin_prob_map[j][k] = PvCs*PCs / (PvCs*PCs + PvCns*PCns)
-                    nonskin_prob_map[j][k] = PvCns*PCns / (PvCs*PCs + PvCns*PCns)
         skin_map_name = image_names[i] + "_s_map.jpg"
-        nonskin_map_name = image_names[i] + "_ns_map.jpg"
         skin_output_path = os.path.join(output_dir, "skin_maps", skin_map_name)
-        nonskin_output_path = os.path.join(output_dir, "nonskin_maps", nonskin_map_name)
         cv2.imwrite(skin_output_path, np.multiply(skin_prob_map,255))
-        cv2.imwrite(nonskin_output_path, np.multiply(nonskin_prob_map,255))
         counter += 1
         if counter % 25 == 0:
             print("THREAD " + str(thread_number) + " : classified " + str(counter) + " / " + str(len(image_names)) + " iamges successfully")
@@ -68,7 +62,6 @@ if __name__ == '__main__':
     start_time = time.time()
     try:
         os.makedirs(os.path.join(output_dir, "skin_maps"), exist_ok = True)
-        os.makedirs(os.path.join(output_dir, "nonskin_maps"), exist_ok = True)
     except OSError as error:
         pass
 
