@@ -25,13 +25,13 @@ chunk_size = 125
 # number of images classified during testing:
 test_images_processed = 0
     
-def classify_image(thread_number, image_names, skin_bins, nonskin_bins, bin_size_b, bin_size_g, bin_size_r, pixel_counts):
+def classify_image(thread_number, image_names, skin_probs, nonskin_probs, bin_size, pixel_counts):
     PCs = pixel_counts[0]/(pixel_counts[0]+pixel_counts[1])
     PCns = pixel_counts[1]/(pixel_counts[0]+pixel_counts[1])
     counter = 0
-    b_ratio = bin_size_b/256
-    g_ratio = bin_size_g/256
-    r_ratio = bin_size_r/256
+    b_ratio = bin_size[0]/256
+    g_ratio = bin_size[1]/256
+    r_ratio = bin_size[2]/256
     print("THREAD " + str(thread_number) + " INFO: thread started working")
     for i in range(len(image_names)):
         image_name = image_names[i] + ".jpg"
@@ -42,8 +42,8 @@ def classify_image(thread_number, image_names, skin_bins, nonskin_bins, bin_size
                 b = math.floor(test_image[j][k][0]*b_ratio)
                 g = math.floor(test_image[j][k][1]*g_ratio)
                 r = math.floor(test_image[j][k][2]*r_ratio)
-                PvCs = (skin_bins[b, g, r]/pixel_counts[0])
-                PvCns = (nonskin_bins[b, g, r]/pixel_counts[1])
+                PvCs = skin_probs[b,g,r]
+                PvCns = nonskin_probs[b,g,r]
                 if (PvCs*PCs + PvCns*PCns) == 0.0: # division by zero
                     skin_prob_map[j][k] = 0.0
                 else: 
@@ -85,10 +85,13 @@ if __name__ == '__main__':
 
         # load and assign probabilities from file
         pixel_counts = np.load(pixel_counts_path)
+
+        skin_probs = np.divide(skin_bins, pixel_counts[0])
+        nonskin_probs = np.divide(nonskin_bins, pixel_counts[1])
     
         test_names_chuncks = [test_names[i:i+chunk_size] for i in range(0,len(test_names),chunk_size)]
 
-        args=[(i,test_names_chuncks[i],skin_bins,nonskin_bins,bin_size[0],bin_size[1],bin_size[2],pixel_counts) for i in range(len(test_names_chuncks))]
+        args=[(i,test_names_chuncks[i],skin_probs,nonskin_probs,bin_size,pixel_counts) for i in range(len(test_names_chuncks))]
         pool = multiprocessing.Pool()
         results = pool.starmap(classify_image, args)
         for i in range(len(results)):
