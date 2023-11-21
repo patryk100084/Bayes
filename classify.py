@@ -7,20 +7,20 @@ import multiprocessing
 import image_loader
 
 # nessecary directories
-img_dir = 'input'
+img_dir = 'input\\images'
 output_dir = 'output'
 
-skin_bins_path = "skin_bins.npy"
-nonskin_bins_path = "nonskin_bins.npy"
-pixel_counts_path = "pixel_counts.npy"
+skin_bins_path = "model\\skin_bins.npy"
+nonskin_bins_path = "model\\nonskin_bins.npy"
+pixel_counts_path = "model\\pixel_counts.npy"
 
 # text files with names of images and their masks used to test bayes classifier
-test_file = open("train.txt", "r")
+test_file = open("test.txt", "r")
 
 # read lines from text files
 test_names = test_file.readlines()
 
-chunk_size = 125
+chunk_size = math.ceil(len(test_names)/multiprocessing.cpu_count())
 
 # number of images classified during testing:
 test_images_processed = 0

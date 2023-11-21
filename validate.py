@@ -8,19 +8,19 @@ import image_loader
 
 # nessecary directories
 metrics_dir = 'metrics'
-skin_maps_dir = os.path.join('output', 'skin_maps')
-ground_truth_dir = 'SkinBin'
+skin_maps_dir = 'output\\skin_maps'
+ground_truth_dir = 'input\\masks'
 
 # get probability maps from directories
 skin_maps_names = os.listdir(skin_maps_dir)
 
-chunk_size = 125
+chunk_size = math.ceil(len(skin_maps_names)/multiprocessing.cpu_count())
 # number of images and masks loaded succesfully
 masks_and_maps_loaded = 0
 maps_validated = 0
 
 # threshold for both clasifications
-thresholds = [0.45]
+thresholds = [0.5]
 
 def validate_classification(thread_number, threshold, skin_map_names):
     sTP = 0
@@ -46,27 +46,8 @@ def validate_classification(thread_number, threshold, skin_map_names):
             sTN += TN
             sFP += FP
             sFN += FN
-
-            # for j in range(skin_prob_map.shape[0]):
-            #     for k in range(skin_prob_map.shape[1]):
-            #         if ground_truth[j][k] == 0.0: # skin on ground truth
-            #             if skin_prob_map[j][k] > threshold: # skin detected by skin classifier 
-            #                 sTP += 1
-            #             else: # non-skin detected by skin classifier
-            #                 sFN += 1 
-            #             if nonskin_prob_map[j][k] > threshold: # non-skin detected by non-skin classifer
-            #                 nsFP += 1
-            #             else: # skin detected by non-skin classifer
-            #                 nsTN += 1
-            #         else: # non-skin on ground truth
-            #             if skin_prob_map[j][k] > threshold: # skin detected by skin classifier 
-            #                 sFP += 1
-            #             else: # non-skin detected by skin classifier
-            #                 sTN += 1
-            #             if nonskin_prob_map[j][k] > threshold: # non-skin detected by non-skin classifer
-            #                 nsTP += 1
-            #             else: # skin detected by non-skin classifer
-            #                 nsFN += 1
+        else:
+            print("WARNING: " + ground_truth_name + " mask doesn't match original image")
         
     print("THREAD " + str(thread_number) + " INFO: thread finished working")
     return [sTP,sTN,sFP,sFN]

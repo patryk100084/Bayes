@@ -7,16 +7,15 @@ import multiprocessing
 import image_loader
 
 # directories containing images and their binary masks
-img_dir = 'input'
-mask_dir = 'SkinBin'
+img_dir = 'input\\images'
+mask_dir = 'input\\masks'
 
 # text files with names of images and their masks used to train bayes classifier
 train_file = open("train.txt", "r")
 
 # read lines from text files
 train_names = train_file.readlines()
-
-chunk_size = 125
+chunk_size = math.ceil(len(train_names)/multiprocessing.cpu_count())
 
 # amount of pixels in each class
 nonskin_pixels = 0
@@ -103,9 +102,9 @@ if __name__ == '__main__':
     pixel_counts.append(skin_pixels)
     pixel_counts.append(nonskin_pixels)
 
-    np.save("skin_bins", skin_bins)
-    np.save("nonskin_bins", nonskin_bins)
-    np.save("pixel_counts", pixel_counts)
+    np.save("model\\skin_bins", skin_bins)
+    np.save("model\\nonskin_bins", nonskin_bins)
+    np.save("model\\pixel_counts", pixel_counts)
 
     end_time = time.time()
 
